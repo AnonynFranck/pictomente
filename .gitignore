@@ -10,4 +10,6 @@ wheels/
 .venv
 
 # Own directories
-assets/
+assets/cache/*.png
+!assets/cache/_id_cache.json
+*pyc
