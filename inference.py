@@ -77,40 +77,40 @@ SEMANTIC_GRAPH: dict[str, dict[str, float]] = {
 
 # Mensajes de salida para el terapeuta
 INTENTION_MESSAGES: dict[str, str] = {
-    "hambre":       "El usuario tiene hambre y quiere comer algo.",
-    "sed":          "El usuario tiene sed y quiere beber algo.",
-    "dulce":        "El usuario quiere comer algo dulce.",
-    "salado":       "El usuario quiere comer algo salado.",
-    "caliente":     "El usuario quiere algo caliente para comer o beber.",
-    "frio_comida":  "El usuario quiere algo frío para comer o beber.",
-    "fruta":        "El usuario quiere comer fruta.",
-    "verdura":      "El usuario quiere comer verduras.",
-    "carne":        "El usuario quiere comer carne.",
-    "pan":          "El usuario quiere comer pan.",
-    "leche":        "El usuario quiere tomar leche.",
-    "agua":         "El usuario quiere tomar agua.",
-    "jugar":        "El usuario quiere jugar.",
-    "descansar":    "El usuario quiere descansar un momento.",
-    "banio":        "El usuario necesita ir al baño.",
-    "salir":        "El usuario quiere salir.",
-    "dormir":       "El usuario tiene sueño y quiere dormir.",
-    "caminar":      "El usuario quiere salir a caminar.",
-    "leer":         "El usuario quiere leer o que le lean algo.",
-    "musica":       "El usuario quiere escuchar música.",
-    "feliz":        "El usuario está expresando que se siente feliz.",
-    "triste":       "El usuario está triste o necesita apoyo.",
-    "dolor":        "El usuario siente dolor. Verificar zona afectada.",
-    "cansado":      "El usuario está cansado.",
-    "enojado":      "El usuario está enojado o frustrado.",
-    "asustado":     "El usuario está asustado o ansioso.",
-    "aburrido":     "El usuario está aburrido y quiere hacer algo.",
-    "sorprendido":  "El usuario está sorprendido por algo.",
-    "casa":         "El usuario quiere ir a casa.",
-    "colegio":      "El usuario hace referencia al colegio.",
-    "doctor":       "El usuario quiere o necesita ir al doctor.",
-    "parque":       "El usuario quiere ir al parque.",
-    "tienda":       "El usuario quiere ir a la tienda.",
-    "transporte":   "El usuario quiere usar algún medio de transporte.",
+    "hambre":       "Quiere comer algo.",
+    "sed":          "Quiere beber algo.",
+    "dulce":        "Quiere algo dulce.",
+    "salado":       "Quiere algo salado.",
+    "caliente":     "Quiere algo caliente.",
+    "frio_comida":  "Quiere algo frío.",
+    "fruta":        "Quiere fruta.",
+    "verdura":      "Quiere verduras.",
+    "carne":        "Quiere carne.",
+    "pan":          "Quiere pan.",
+    "leche":        "Quiere leche.",
+    "agua":         "Quiere agua.",
+    "jugar":        "Quiere jugar.",
+    "descansar":    "Quiere descansar.",
+    "banio":        "Necesita ir al baño.",
+    "salir":        "Quiere salir.",
+    "dormir":       "Quiere dormir.",
+    "caminar":      "Quiere salir a caminar.",
+    "leer":         "Quiere leer o que le lean algo.",
+    "musica":       "Quiere escuchar música.",
+    "feliz":        "Se siente feliz.",
+    "triste":       "Se siente triste.",
+    "dolor":        "Siente dolor — verificar zona afectada.",
+    "cansado":      "Está cansado.",
+    "enojado":      "Está enojado.",
+    "asustado":     "Está asustado.",
+    "aburrido":     "Está aburrido.",
+    "sorprendido":  "Está sorprendido.",
+    "casa":         "Quiere ir a casa.",
+    "colegio":      "Quiere ir al colegio.",
+    "doctor":       "Quiere o necesita ir al doctor.",
+    "parque":       "Quiere ir al parque.",
+    "tienda":       "Quiere ir a la tienda.",
+    "transporte":   "Quiere usar un medio de transporte.",
 }
 
 # Todos los nodos hoja (intenciones finales)
@@ -137,7 +137,8 @@ class InferenceEngine:
     # Ronda actual (0-indexed)
     round_num: int = 0
     # Confianza umbral para dar una predicción
-    CONFIDENCE_THRESHOLD: float = 0.55
+    CONFIDENCE_THRESHOLD: float = 0.65    # antes: 0.55
+    MIN_ROUNDS: int = 2                   # mínimo de rondas antes de concluir
 
     def __post_init__(self):
         # Inicializar distribución uniforme sobre hojas
@@ -145,23 +146,40 @@ class InferenceEngine:
         self.probs = {leaf: 1.0 / n for leaf in LEAF_NODES}
 
     def get_pictograms_for_round(self, n: int = 6) -> list[str]:
-        """
-        Devuelve los n pictogramas más informativos para mostrar en esta ronda.
-        Ronda 0: siempre las 4 categorías raíz.
-        Rondas siguientes: hojas con mayor ganancia de información esperada.
-        """
         if self.round_num == 0:
-            return list(SEMANTIC_GRAPH["raiz"].keys())  # 4 categorías
+            return list(SEMANTIC_GRAPH["raiz"].keys())
 
-        # Calcular ganancia de información para cada hoja no mostrada aún
         shown = {key for key, _ in self.history}
-        candidates = [
-            (leaf, self._expected_info_gain(leaf))
-            for leaf in LEAF_NODES
-            if leaf not in shown
-        ]
+        dominant = self._get_dominant_category(threshold=0.40)
+
+        if dominant:
+            pool = [
+                leaf for leaf in SEMANTIC_GRAPH[dominant]
+                if leaf in LEAF_NODES and leaf not in shown
+            ]
+        else:
+            pool = [leaf for leaf in LEAF_NODES if leaf not in shown]
+
+        candidates = [(leaf, self._expected_info_gain(leaf)) for leaf in pool]
         candidates.sort(key=lambda x: x[1], reverse=True)
         return [c[0] for c in candidates[:n]]
+
+    def _get_dominant_category(self, threshold: float = 0.40) -> str | None:
+        for cat in ("alimentacion", "actividades", "emociones", "entorno"):
+            leaves = [l for l in SEMANTIC_GRAPH[cat] if l in LEAF_NODES]
+            cat_prob = sum(self.probs.get(l, 0) for l in leaves)
+            if cat_prob >= threshold:
+                return cat
+        return None
+
+    def _semantic_weight(self, leaf: str, category: str | None) -> float:
+        """Peso semántico del grafo para un nodo hoja — modula el factor de update."""
+        if category and category in SEMANTIC_GRAPH:
+            return SEMANTIC_GRAPH[category].get(leaf, 0.5)
+        for cat in ("alimentacion", "actividades", "emociones", "entorno"):
+            if leaf in SEMANTIC_GRAPH.get(cat, {}):
+                return SEMANTIC_GRAPH[cat][leaf]
+        return 0.5
 
     def _expected_info_gain(self, pictogram: str) -> float:
         """
@@ -193,27 +211,22 @@ class InferenceEngine:
         return sum(self.probs.get(child, 0.0) for child in children)
 
     def update(self, pictogram: str, selected: bool):
-        """
-        Actualiza las probabilidades basándose en la selección del usuario.
-        Si selecciona una categoría, las hojas hijas suben; las demás bajan.
-        Si selecciona una hoja, esa sube; las demás bajan.
-        """
         self.history.append((pictogram, selected))
-
-        # Obtener hojas relacionadas con el pictograma seleccionado
         related = self._get_related_leaves(pictogram)
-
-        factor_up = 3.5 if selected else 0.3
-        factor_down = 0.4 if selected else 1.8
+        dominant = self._get_dominant_category(threshold=0.35)
 
         new_probs = {}
         for leaf, prob in self.probs.items():
             if leaf in related:
-                new_probs[leaf] = prob * factor_up
+                if selected:
+                    weight = self._semantic_weight(leaf, dominant)
+                    factor = 2.0 + weight * 2.0  # rango 2.4 → 4.0
+                    new_probs[leaf] = prob * factor
+                else:
+                    new_probs[leaf] = prob * 0.3
             else:
-                new_probs[leaf] = prob * factor_down
+                new_probs[leaf] = prob * (0.5 if selected else 1.2)
 
-        # Normalizar
         total = sum(new_probs.values())
         if total > 0:
             self.probs = {k: v / total for k, v in new_probs.items()}
@@ -240,17 +253,20 @@ class InferenceEngine:
         return -sum(p * math.log2(p) for p in self.probs.values() if p > 0)
 
     def _entropy_if_update(self, pictogram: str, selected: bool) -> float:
-        """Calcula la entropía hipotética si ocurre una actualización."""
         related = self._get_related_leaves(pictogram)
-        factor_up = 3.5 if selected else 0.3
-        factor_down = 0.4 if selected else 1.8
+        dominant = self._get_dominant_category(threshold=0.35)
 
         new_probs = {}
         for leaf, prob in self.probs.items():
             if leaf in related:
-                new_probs[leaf] = prob * factor_up
+                if selected:
+                    weight = self._semantic_weight(leaf, dominant)
+                    factor = 2.0 + weight * 2.0
+                    new_probs[leaf] = prob * factor
+                else:
+                    new_probs[leaf] = prob * 0.3
             else:
-                new_probs[leaf] = prob * factor_down
+                new_probs[leaf] = prob * (0.5 if selected else 1.2)
 
         total = sum(new_probs.values())
         if total == 0:
@@ -269,27 +285,15 @@ class InferenceEngine:
         return sorted_probs[:n]
 
     def is_confident(self) -> bool:
-        """¿Hay suficiente confianza para dar una predicción?"""
+        if self.round_num < self.MIN_ROUNDS:
+            return False
         _, top_prob = self.get_top_prediction()
         return top_prob >= self.CONFIDENCE_THRESHOLD
 
     def get_message(self) -> str:
-        """Genera el mensaje final para el terapeuta."""
-        top_n = self.get_top_n(3)
-        best_key, best_prob = top_n[0]
-
-        msg = INTENTION_MESSAGES.get(best_key, f"El usuario quiere expresar: {best_key}.")
-
-        # Si hay segunda opción cercana, mencionarla
-        if len(top_n) > 1:
-            second_key, second_prob = top_n[1]
-            if second_prob > 0.20:
-                second_msg = INTENTION_MESSAGES.get(second_key, second_key)
-                msg += f"\n\nPosiblemente también: {second_msg}"
-
-        confidence_pct = int(best_prob * 100)
-        msg += f"\n\n(Confianza: {confidence_pct}%)"
-        return msg
+        """Genera el mensaje final para el encargado — simple y accionable."""
+        best_key, _ = self.get_top_prediction()
+        return INTENTION_MESSAGES.get(best_key, best_key)
 
     def advance_round(self):
         self.round_num += 1
