@@ -1,86 +1,101 @@
 <script setup lang="ts">
 import { ROOT_CATEGORIES } from '../data/graph'
+import { PHRASES } from '../data/phrases'
+import BigButton from './BigButton.vue'
+import MascotGuide from './MascotGuide.vue'
 import PictoCard from './PictoCard.vue'
+import SoundToggle from './SoundToggle.vue'
 
 defineEmits<{ start: [] }>()
+
+const LOGO = 'Pictomente'.split('')
+const LOGO_COLORS = ['--c-emociones-edge', '--c-actividades-edge', '--c-alimentacion-edge', '--c-entorno-edge', '--c-personas-edge']
 </script>
 
 <template>
   <section class="start" aria-labelledby="start-title">
-    <div class="start__copy">
-      <p class="start__kicker">Comunicación aumentativa · Demo</p>
-      <h1 id="start-title" class="start__title">Picto<span>mente</span></h1>
-      <p class="start__lead">
-        Elige imágenes para expresar lo que sientes o necesitas. En pocas rondas, la IA
-        deduce la intención y le explica al terapeuta qué quiere decir la persona.
-      </p>
-      <ol class="start__steps">
-        <li>Marca los pictogramas que se acercan a lo que quieres.</li>
-        <li>La IA aprende de cada elección y afina las siguientes opciones.</li>
-        <li>Al llegar a suficiente confianza, aparece un mensaje claro.</li>
-      </ol>
-      <button class="btn btn--primary start__cta" type="button" @click="$emit('start')">
-        Comenzar →
-      </button>
-    </div>
+    <div class="start__top"><SoundToggle /></div>
 
-    <div class="start__board" aria-hidden="true">
-      <PictoCard
-        v-for="(key, i) in ROOT_CATEGORIES"
-        :key="key"
-        :picto-key="key"
-        :interactive="false"
-        class="start__tile"
-        :style="{ '--i': i }"
-      />
-    </div>
+    <h1 id="start-title" class="logo" aria-label="Pictomente">
+      <span
+        v-for="(letter, i) in LOGO"
+        :key="i"
+        class="logo__letter"
+        :style="{ '--c': `var(${LOGO_COLORS[i % LOGO_COLORS.length]})`, '--i': i }"
+        aria-hidden="true"
+      >{{ letter }}</span>
+    </h1>
+
+    <MascotGuide :text="PHRASES.start" mood="happy" :size="170" stack class="start__guide" />
+
+    <ul class="start__tiles" aria-hidden="true">
+      <li v-for="(key, i) in ROOT_CATEGORIES" :key="key" :style="{ '--i': i }">
+        <PictoCard :picto-key="key" :interactive="false" />
+      </li>
+    </ul>
+
+    <BigButton class="start__play" size="lg" @click="$emit('start')">
+      <template #icon>
+        <svg viewBox="0 0 24 24"><path d="M7 4.5v15l13-7.5z" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linejoin="round" /></svg>
+      </template>
+      ¡Jugar!
+    </BigButton>
   </section>
 </template>
 
 <style scoped>
-.start {
-  display: grid; gap: var(--space-section);
-  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
-  align-items: center;
-  padding-block: var(--space-section);
-}
-.start__kicker {
-  display: inline-block; padding: 0.25rem 0.8rem; margin-bottom: 1.2rem;
-  background: var(--cat-alimentacion); border: 2px solid var(--line); border-radius: 99px;
-  font-weight: 700; font-size: var(--text-sm);
-}
-.start__title { font-size: var(--text-hero); letter-spacing: -0.03em; }
-.start__title span { font-style: italic; font-weight: 400; color: var(--action); }
-.start__lead { margin-top: 1.2rem; max-width: 34rem; font-size: var(--text-lg); color: var(--ink-soft); }
-.start__steps {
-  margin: 1.6rem 0 2rem; padding: 0; list-style: none; counter-reset: step;
-  display: grid; gap: 0.7rem; max-width: 34rem;
-}
-.start__steps li { counter-increment: step; display: flex; gap: 0.8rem; align-items: baseline; }
-.start__steps li::before {
-  content: counter(step);
-  flex: none; display: grid; place-items: center; width: 1.9rem; height: 1.9rem;
-  font-family: var(--font-display); font-weight: 800;
-  background: var(--surface); border: 2px solid var(--line); border-radius: 50%;
-}
-.start__cta { font-size: var(--text-lg); padding-inline: 2.2rem; }
+.start { display: grid; grid-template-columns: minmax(0, 1fr); justify-items: center; gap: 1.4rem; padding-block: 1rem 3rem; }
+.start__top { justify-self: end; }
 
-.start__board {
-  display: grid; grid-template-columns: 1fr 1fr; gap: 1.1rem;
-  padding: 1.4rem; background: var(--paper-deep);
-  border: 2px solid var(--line); border-radius: 28px; box-shadow: var(--shadow-hard-lg);
-  transform: rotate(2deg);
+.logo { display: flex; font-size: var(--text-logo); letter-spacing: -0.02em; line-height: 1; margin-top: -2rem; }
+.logo__letter {
+  display: inline-block; color: var(--c);
+  -webkit-text-stroke: 0.09em var(--ink); paint-order: stroke fill;
+  text-shadow: 0 0.06em 0 var(--ink);
 }
-.start__tile:nth-child(even) { transform: translateY(1.2rem) rotate(-2.5deg); }
-.start__tile:nth-child(odd) { transform: rotate(1.5deg); }
+
+.start__guide { max-width: 44rem; }
+
+.start__tiles {
+  list-style: none; margin: 0.4rem 0 0; padding: 0;
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; width: min(100%, 40rem);
+}
+.start__tiles :deep(.picto__label) { font-size: var(--text-sm); }
+.start__tiles li:nth-child(3n + 2) { translate: 0 0.8rem; }
+.start__tiles li:nth-child(odd) { rotate: -1.5deg; }
+.start__tiles li:nth-child(even) { rotate: 1.5deg; }
+
+.start__play { margin-top: 1rem; }
+
+/* pantallas anchas: título y guía a la izquierda, fichas a la derecha */
+@media (min-width: 62rem) {
+  .start {
+    grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+    grid-template-areas: 'logo tiles' 'guide tiles' 'play tiles';
+    align-content: center; align-items: center; column-gap: 3rem; row-gap: 1.6rem;
+    min-height: calc(100dvh - 3rem); position: relative;
+  }
+  .start__top { position: absolute; top: 0; right: 0; }
+  .logo { grid-area: logo; font-size: clamp(4rem, 6.4vw, 6.4rem); margin: 0; justify-self: start; }
+  .start__guide { grid-area: guide; max-width: none; }
+  .start__tiles { grid-area: tiles; width: 100%; margin: 0; }
+  .start__play { grid-area: play; justify-self: start; margin: 0; }
+}
 
 @media (prefers-reduced-motion: no-preference) {
-  .start__tile { animation: tile-in 700ms var(--ease-out-expo) backwards; animation-delay: calc(var(--i) * 90ms + 150ms); }
-  @keyframes tile-in { from { opacity: 0; translate: 0 24px; } }
-}
+  .logo__letter { animation: letter-in 700ms var(--ease-bounce) backwards; animation-delay: calc(var(--i) * 70ms); }
+  .logo__letter:hover { animation: letter-jump 500ms var(--ease-bounce); }
+  .start__tiles li { animation: tile-in 600ms var(--ease-bounce) backwards; animation-delay: calc(var(--i) * 80ms + 400ms); }
+  .start__play { animation: beat 1.6s ease-in-out 1.2s infinite; }
 
-@media (max-width: 52rem) {
-  .start { grid-template-columns: 1fr; }
-  .start__board { order: -1; transform: none; max-width: 24rem; padding: 1rem; gap: 0.8rem; }
+  @keyframes letter-in { from { opacity: 0; transform: translateY(-1.2em) rotate(-20deg); } }
+  @keyframes letter-jump { 40% { transform: translateY(-0.25em) rotate(-6deg); } }
+  @keyframes tile-in { from { opacity: 0; transform: scale(0.5); } }
+  @keyframes beat { 50% { transform: scale(1.06); } }
+}
+@media (max-width: 36rem) {
+  .start__tiles { gap: 0.7rem; }
+  .start__tiles :deep(.picto__label) { display: none; }
+  .logo { margin-top: -1rem; }
 }
 </style>

@@ -1,47 +1,58 @@
-@import '@fontsource-variable/fraunces/index.css';
+@import '@fontsource-variable/fredoka/index.css';
 @import '@fontsource/atkinson-hyperlegible/400.css';
 @import '@fontsource/atkinson-hyperlegible/700.css';
 
 :root {
-  /* Superficies y tinta */
-  --paper: oklch(96.5% 0.022 88);
-  --paper-deep: oklch(92% 0.03 85);
-  --surface: oklch(99% 0.008 90);
-  --ink: oklch(24% 0.045 265);
-  --ink-soft: oklch(42% 0.04 265);
-  --line: oklch(24% 0.045 265);
+  /* Cielo de juego */
+  --sky-top: oklch(80% 0.12 232);
+  --sky-bottom: oklch(95% 0.06 205);
+  --hill: oklch(82% 0.17 148);
+  --hill-dark: oklch(72% 0.17 148);
+  --ink: oklch(26% 0.06 270);
+  --ink-soft: oklch(40% 0.05 270);
+  --white: oklch(99% 0.01 95);
 
-  /* Acción principal */
-  --action: oklch(50% 0.19 262);
-  --action-hover: oklch(44% 0.19 262);
-  --action-ink: oklch(99% 0.01 262);
-  --ok: oklch(52% 0.14 155);
+  /* Un color con significado por categoría: relleno + borde "3D" */
+  --c-alimentacion: oklch(82% 0.17 62);
+  --c-alimentacion-edge: oklch(64% 0.18 52);
+  --c-actividades: oklch(80% 0.13 240);
+  --c-actividades-edge: oklch(60% 0.16 250);
+  --c-emociones: oklch(82% 0.15 5);
+  --c-emociones-edge: oklch(64% 0.2 5);
+  --c-entorno: oklch(84% 0.17 148);
+  --c-entorno-edge: oklch(64% 0.17 150);
+  --c-personas: oklch(78% 0.15 305);
+  --c-personas-edge: oklch(60% 0.19 305);
+  --c-juguetes: oklch(91% 0.16 98);
+  --c-juguetes-edge: oklch(75% 0.16 85);
+  --c-none: oklch(90% 0.02 260);
+  --c-none-edge: oklch(70% 0.03 260);
 
-  /* Color con significado: una tinta por categoría */
-  --cat-alimentacion: oklch(87% 0.15 85);
-  --cat-actividades: oklch(85% 0.1 232);
-  --cat-emociones: oklch(82% 0.12 22);
-  --cat-entorno: oklch(86% 0.13 150);
-  --cat-none: oklch(90% 0.02 260);
+  /* Acciones */
+  --go: oklch(80% 0.2 145);
+  --go-edge: oklch(58% 0.18 148);
+  --stop: oklch(76% 0.17 25);
+  --stop-edge: oklch(56% 0.2 25);
+  --sun: oklch(88% 0.17 92);
+  --sun-edge: oklch(70% 0.16 80);
 
-  /* Tipografía */
-  --font-display: 'Fraunces Variable', Georgia, serif;
+  /* Tipografía: Fredoka para todo lo que lee el niño, Atkinson para el texto del adulto */
+  --font-display: 'Fredoka Variable', 'Trebuchet MS', system-ui, sans-serif;
   --font-body: 'Atkinson Hyperlegible', system-ui, sans-serif;
-  --text-sm: clamp(0.875rem, 0.85rem + 0.15vw, 0.95rem);
-  --text-base: clamp(1rem, 0.95rem + 0.25vw, 1.125rem);
-  --text-lg: clamp(1.15rem, 1.05rem + 0.5vw, 1.4rem);
-  --text-xl: clamp(1.6rem, 1.2rem + 1.8vw, 2.6rem);
-  --text-hero: clamp(2.8rem, 1.2rem + 7vw, 6.5rem);
+  --text-sm: clamp(1rem, 0.95rem + 0.2vw, 1.1rem);
+  --text-md: clamp(1.2rem, 1.05rem + 0.6vw, 1.5rem);
+  --text-lg: clamp(1.5rem, 1.2rem + 1.4vw, 2.3rem);
+  --text-xl: clamp(2rem, 1.4rem + 2.6vw, 3.6rem);
+  --text-logo: clamp(3.2rem, 1.4rem + 8vw, 7rem);
 
-  /* Espaciado y forma */
-  --space-section: clamp(1.5rem, 1rem + 3vw, 4rem);
-  --radius: 18px;
-  --radius-sm: 12px;
-  --shadow-hard: 4px 4px 0 var(--line);
-  --shadow-hard-lg: 7px 7px 0 var(--line);
+  /* Forma */
+  --radius: 28px;
+  --radius-sm: 20px;
+  --edge: 8px;
 
   /* Movimiento */
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
-  --duration-fast: 150ms;
-  --duration-normal: 320ms;
+  --ease-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --duration-fast: 140ms;
+  --duration-normal: 340ms;
 }

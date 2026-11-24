@@ -1,72 +1,141 @@
-import { describe, expect, it } from 'vitest'
-import { mount } from '@vue/test-utils'
+import { afterEach, describe, expect, it } from 'vitest'
+import { flushPromises, mount, type VueWrapper } from '@vue/test-utils'
 import App from '../src/App.vue'
-import { MAX_ROUNDS } from '../src/lib/engine'
+import { useSpeech } from '../src/composables/useSpeech'
+import { MAX_REJECTIONS, MAX_ROUNDS } from '../src/lib/engine'
+import { ROOT_CATEGORIES } from '../src/data/graph'
+import { synth } from './setup'
 
-const click = (w: ReturnType<typeof mount>, text: string) =>
-  w.findAll('button').find((b) => b.text().startsWith(text))!.trigger('click')
+type W = VueWrapper
 
-describe('App flow', () => {
-  it('starts on the welcome screen without a page footer', () => {
+const click = async (w: W, text: string) => {
+  await w.findAll('button').find((b) => b.text().startsWith(text))!.trigger('click')
+  await flushPromises()
+}
+const cards = (w: W) => w.findAll('.game__grid button')
+const labels = (w: W) => cards(w).map((c) => c.attributes('aria-label'))
+
+/** Juega rondas eligiendo siempre la primera propuesta hasta que Pico pregunta "¿era esto?". */
+async function playUntilGuess(w: W) {
+  for (let i = 0; i < 12 && !w.find('.guess').exists(); i++) {
+    await cards(w)[0]!.trigger('click')
+    await click(w, '¡Listo!')
+  }
+  expect(w.find('.guess').exists()).toBe(true)
+}
+
+const startedApp = async () => {
+  const w = mount(App)
+  await click(w, '¡Jugar!')
+  return w
+}
+
+afterEach(() => {
+  if (useSpeech().muted.value) useSpeech().toggleMute()
+  synth.speak.mockClear()
+})
+
+describe('welcome screen', () => {
+  it('greets with the logo, Pico and a big play button, with no page footer', () => {
     const w = mount(App)
-    expect(w.find('h1').text()).toContain('mente')
+    expect(w.find('h1').attributes('aria-label')).toBe('Pictomente')
+    expect(w.text()).toContain('Soy Pico')
     expect(w.find('footer').exists()).toBe(false)
+    expect(w.findAll('.start__tiles li')).toHaveLength(ROOT_CATEGORIES.length)
+  })
+})
+
+describe('playing', () => {
+  it('shows every category in round 1 and Pico speaks the prompt', async () => {
+    const w = await startedApp()
+    expect(cards(w)).toHaveLength(ROOT_CATEGORIES.length)
+    expect(w.find('.stars').attributes('aria-label')).toBe(`Ronda 1 de ${MAX_ROUNDS}`)
+    expect(synth.speak).toHaveBeenCalled()
+    expect((synth.speak.mock.calls.at(-1)![0] as { text: string }).text).toContain('hoy')
   })
 
-  it('shows the four categories in round 1 after pressing Comenzar', async () => {
-    const w = mount(App)
-    await click(w, 'Comenzar')
-    expect(w.text()).toContain(`Ronda 1 de ${MAX_ROUNDS}`)
-    expect(w.findAll('.game__grid button')).toHaveLength(4)
+  it('selects a card, says its reaction and counts it on the ready button', async () => {
+    const w = await startedApp()
+    synth.speak.mockClear()
+    await cards(w)[0]!.trigger('click')
+    expect(cards(w)[0]!.attributes('aria-pressed')).toBe('true')
+    expect(w.find('.game__count').text()).toBe('1')
+    expect(w.find('.guide__text').text()).toContain('comida')
+    expect(synth.speak).toHaveBeenCalledTimes(1)
+
+    await cards(w)[0]!.trigger('click')
+    expect(cards(w)[0]!.attributes('aria-pressed')).toBe('false')
+    expect(w.find('.game__count').exists()).toBe(false)
   })
 
-  it('counts the selected pictograms in the confirm button', async () => {
-    const w = mount(App)
-    await click(w, 'Comenzar')
-    await w.findAll('.game__grid button')[0]!.trigger('click')
-    expect(w.findAll('.game__grid button')[0]!.attributes('aria-pressed')).toBe('true')
-    expect(w.text()).toContain('Confirmar (1)')
-    await w.findAll('.game__grid button')[0]!.trigger('click')
-    expect(w.text()).not.toContain('Confirmar (')
-  })
-
-  it('moves to six new pictograms in round 2 and never repeats them when skipping', async () => {
-    const w = mount(App)
-    await click(w, 'Comenzar')
-    await w.findAll('.game__grid button')[2]!.trigger('click') // emociones
-    await click(w, 'Confirmar')
-    const round2 = w.findAll('.picto__label').map((l) => l.text())
-    expect(w.text()).toContain('Ronda 2')
+  it('moves on to six new pictograms and never repeats them when skipping', async () => {
+    const w = await startedApp()
+    await cards(w)[2]!.trigger('click')
+    await click(w, '¡Listo!')
+    const round2 = labels(w)
     expect(round2).toHaveLength(6)
+    expect(w.find('.stars').attributes('aria-label')).toContain('Ronda 2')
 
-    await click(w, 'Saltar')
-    const round3 = w.findAll('.picto__label').map((l) => l.text())
-    expect(round3.some((l) => round2.includes(l))).toBe(false)
+    await click(w, 'Otros')
+    expect(labels(w).some((l) => round2.includes(l))).toBe(false)
   })
 
-  it('reaches the result screen and can start a new session', async () => {
-    const w = mount(App)
-    await click(w, 'Comenzar')
-    for (let i = 0; i < MAX_ROUNDS; i++) {
-      if (w.find('.result').exists()) break
-      await click(w, 'Saltar')
-    }
-    expect(w.find('.result').exists()).toBe(true)
-    expect(w.find('.note__main').text()).toMatch(/^El usuario/)
-
-    await click(w, 'Nueva sesión')
-    expect(w.text()).toContain('Ronda 1')
+  it('can go back home from the game', async () => {
+    const w = await startedApp()
+    await w.find('.game__home').trigger('click')
+    await flushPromises()
+    expect(w.find('.start').exists()).toBe(true)
   })
 
-  it('shows the result after confirming every round', async () => {
+  it('stays quiet when the child turns the sound off', async () => {
     const w = mount(App)
-    await click(w, 'Comenzar')
-    for (let round = 0; round < MAX_ROUNDS; round++) {
-      expect(w.find('.result').exists()).toBe(false)
-      await w.findAll('.game__grid button')[0]!.trigger('click')
-      await click(w, 'Confirmar')
+    await w.find('.sound').trigger('click')
+    synth.speak.mockClear()
+    await click(w, '¡Jugar!')
+    expect(synth.speak).not.toHaveBeenCalled()
+  })
+})
+
+describe('guessing', () => {
+  it('asks "¿Querías decir …?" after the rounds and celebrates a yes', async () => {
+    const w = await startedApp()
+    await playUntilGuess(w)
+    expect(w.find('.guide__text').text()).toMatch(/^¿Querías decir/)
+
+    await click(w, '¡Sí!')
+    expect(w.find('.done').exists()).toBe(true)
+    expect(w.find('.adult__text').text()).toMatch(/^(Quiere|Necesita|Se siente|Siente|Está|Tiene)/)
+    expect(w.find('.confetti').exists()).toBe(true)
+
+    await click(w, '¡Otra vez!')
+    expect(w.find('.stars').attributes('aria-label')).toBe(`Ronda 1 de ${MAX_ROUNDS}`)
+  })
+
+  it('goes back to play after a "No" and never proposes the rejected pictogram again', async () => {
+    const w = await startedApp()
+    await playUntilGuess(w)
+    const rejected = w.find('img').attributes('alt')!
+    await click(w, 'No')
+
+    expect(w.find('.game__grid').exists()).toBe(true)
+    expect(w.find('.guide__text').text()).toContain('Probemos otra vez')
+    expect(labels(w)).not.toContain(rejected)
+    await playUntilGuess(w)
+    expect(w.find('img').attributes('alt')).not.toBe(rejected)
+  })
+
+  it('asks for adult help after too many rejections instead of insisting', async () => {
+    const w = await startedApp()
+    for (let i = 0; i < MAX_REJECTIONS; i++) {
+      await playUntilGuess(w)
+      await click(w, 'No')
     }
-    expect(w.find('.result').exists()).toBe(true)
-    expect(w.findAll('.dist__row')).toHaveLength(3)
+    await playUntilGuess(w)
+    await click(w, 'No')
+
+    expect(w.find('.done').exists()).toBe(true)
+    expect(w.find('.confetti').exists()).toBe(false)
+    expect(w.find('.adult__text').text()).toContain('preguntarle directamente')
+    expect(w.find('.guide__text').text()).toContain('Un adulto')
   })
 })
