@@ -24,15 +24,15 @@ SEARCH_TERMS = {
     # Categorías raíz
     "alimentacion": "comida",
     "actividades":  "actividad",
-    "emociones":    "sentimientos",
-    "entorno":      "lugar",
+    "emociones":    "sentimientos",   # antes: "emoción" — fallaba por tilde
+    "entorno":      "edificio",       # antes: "lugar" — demasiado genérico
     # Alimentación
     "hambre":       "hambre",
     "sed":          "sed",
     "dulce":        "dulce",
     "salado":       "salado",
     "caliente":     "caliente",
-    "frio_comida":  "frío",
+    "frio_comida":  "frio",           # antes: "frío" — fallaba por tilde
     "fruta":        "fruta",
     "verdura":      "verdura",
     "carne":        "carne",
@@ -42,12 +42,12 @@ SEARCH_TERMS = {
     # Actividades
     "jugar":        "jugar",
     "descansar":    "descansar",
-    "banio":        "baño",
+    "banio":        "bano",           # antes: "baño" — fallaba por tilde
     "salir":        "salir",
     "dormir":       "dormir",
     "caminar":      "caminar",
     "leer":         "leer",
-    "musica":       "música",
+    "musica":       "musica",         # antes: "música" — fallaba por tilde
     # Emociones
     "feliz":        "feliz",
     "triste":       "triste",
@@ -60,10 +60,10 @@ SEARCH_TERMS = {
     # Entorno
     "casa":         "casa",
     "colegio":      "colegio",
-    "doctor":       "médico",
+    "doctor":       "medico",         # antes: "médico" — fallaba por tilde
     "parque":       "parque",
     "tienda":       "tienda",
-    "transporte":   "autobús",
+    "transporte":   "autobus",        # antes: "autobús" — fallaba por tilde
 }
 
 # Caché de IDs en memoria (persistido en _id_cache.json)
@@ -190,34 +190,26 @@ def get_image(key: str, size: tuple[int, int] = (120, 120)) -> pygame.Surface:
 
 def _make_placeholder(key: str, size: tuple[int, int]) -> pygame.Surface:
     """Genera un pictograma placeholder con color y texto."""
-    colors = {
-        "alimentacion": (255, 200, 100),
-        "actividades":  (100, 200, 255),
-        "emociones":    (255, 150, 150),
-        "entorno":      (150, 220, 150),
-    }
-    # Determinar categoría por prefijo aproximado
-    cat_color = (200, 200, 200)
-    for cat, col in colors.items():
-        if key in ("alimentacion", "hambre", "sed", "dulce", "salado",
-                   "caliente", "frio_comida", "fruta", "verdura",
-                   "carne", "pan", "leche", "agua"):
-            cat_color = colors["alimentacion"]
-        elif key in ("actividades", "jugar", "descansar", "banio", "salir",
-                     "dormir", "caminar", "leer", "musica"):
-            cat_color = colors["actividades"]
-        elif key in ("emociones", "feliz", "triste", "dolor", "cansado",
-                     "enojado", "asustado", "aburrido", "sorprendido"):
-            cat_color = colors["emociones"]
-        elif key in ("entorno", "casa", "colegio", "doctor", "parque",
-                     "tienda", "transporte"):
-            cat_color = colors["entorno"]
+    if key in ("alimentacion", "hambre", "sed", "dulce", "salado",
+               "caliente", "frio_comida", "fruta", "verdura",
+               "carne", "pan", "leche", "agua"):
+        cat_color = (255, 200, 100)
+    elif key in ("actividades", "jugar", "descansar", "banio", "salir",
+                 "dormir", "caminar", "leer", "musica"):
+        cat_color = (100, 200, 255)
+    elif key in ("emociones", "feliz", "triste", "dolor", "cansado",
+                 "enojado", "asustado", "aburrido", "sorprendido"):
+        cat_color = (255, 150, 150)
+    elif key in ("entorno", "casa", "colegio", "doctor", "parque",
+                 "tienda", "transporte"):
+        cat_color = (150, 220, 150)
+    else:
+        cat_color = (200, 200, 200)
 
     surf = pygame.Surface(size, pygame.SRCALPHA)
     surf.fill((*cat_color, 220))
     pygame.draw.rect(surf, (80, 80, 80), surf.get_rect(), 3, border_radius=12)
 
-    # Texto de la etiqueta centrado
     pygame.font.init()
     label = LABELS.get(key, key)
     font_size = max(12, size[0] // 7)

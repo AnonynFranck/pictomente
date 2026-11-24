@@ -9,6 +9,7 @@ import pygame
 import pygame.freetype
 
 import arasaac
+import tts
 from inference import InferenceEngine
 
 # ---------------------------------------------------------------------------
@@ -107,6 +108,7 @@ class StartScreen(Screen):
         if event.type == pygame.MOUSEMOTION:
             self.hovered = self.btn_rect.collidepoint(event.pos)
         if event.type == pygame.MOUSEBUTTONDOWN and self.hovered:
+            tts.speak(tts.PHRASES["start"])
             self.on_start()
 
     def draw(self, surf):
@@ -169,6 +171,7 @@ class GameScreen(Screen):
         self.btn_confirm = pygame.Rect(SCREEN_W - 220, SCREEN_H - 70, 180, 48)
         self.btn_skip    = pygame.Rect(40, SCREEN_H - 70, 140, 48)
         self.hovered_btn = None
+        self.anim: dict[str, float] = {}   # key -> escala actual (1.0 = normal)
         self.font_label  = pygame.font.SysFont("sans", 13, bold=True)
         self.font_header = pygame.font.SysFont("sans", 20, bold=True)
         self.font_sub    = pygame.font.SysFont("sans", 15)
@@ -178,6 +181,8 @@ class GameScreen(Screen):
         self.selected = set()
         self.current_pictos = self.engine.get_pictograms_for_round(CARDS_PER_ROW)
         self._build_cards()
+        phrase = tts.PHRASES["round_0"] if self.engine.round_num == 0 else tts.PHRASES["round_n"]
+        tts.speak(phrase)
 
     def _build_cards(self):
         self.cards = []
@@ -209,16 +214,21 @@ class GameScreen(Screen):
                     key = card["key"]
                     if key in self.selected:
                         self.selected.discard(key)
+                        self.anim[key] = 1.0
                     else:
                         self.selected.add(key)
+                        self.anim[key] = 1.18  # inicia agrandado, se anima hacia 1.0
+                        tts.speak(arasaac.get_label(key))
                     return
 
             # Confirmar selección
             if self.btn_confirm.collidepoint(pos):
+                tts.speak(tts.PHRASES["confirm"])
                 self._process_selection()
 
             # Saltar ronda
             if self.btn_skip.collidepoint(pos):
+                tts.speak(tts.PHRASES["skip"])
                 self._next_round(force=True)
 
     def _process_selection(self):
@@ -234,6 +244,14 @@ class GameScreen(Screen):
             self.on_finish(self.engine)
         else:
             self._load_round()
+
+    def update(self):
+        # Animación de bounce: escala vuelve a 1.0 gradualmente
+        for key in list(self.anim.keys()):
+            current = self.anim[key]
+            self.anim[key] = current + (1.0 - current) * 0.25
+            if abs(self.anim[key] - 1.0) < 0.005:
+                del self.anim[key]
 
     def draw(self, surf):
         surf.fill(C_BG)
@@ -275,40 +293,53 @@ class GameScreen(Screen):
 
         # Tarjetas de pictogramas
         for card in self.cards:
-            key   = card["key"]
-            rect  = card["rect"]
-            image = card["image"]
+            key    = card["key"]
+            rect   = card["rect"]
+            image  = card["image"]
             is_sel = key in self.selected
 
+            # Escala de animación
+            scale = self.anim.get(key, 1.0)
+            if scale != 1.0:
+                cx, cy = rect.centerx, rect.centery
+                new_w = int(CARD_W * scale)
+                new_h = int(CARD_H * scale)
+                draw_rect = pygame.Rect(cx - new_w // 2, cy - new_h // 2, new_w, new_h)
+            else:
+                draw_rect = rect
+
             # Sombra
-            shadow = rect.move(3, 3)
+            shadow = draw_rect.move(4, 4)
             pygame.draw.rect(surf, C_SHADOW, shadow, border_radius=14)
 
             # Fondo tarjeta
             bg_color = C_SELECTED if is_sel else C_CARD_BG
-            draw_rounded_rect(surf, bg_color, rect, radius=14,
+            draw_rounded_rect(surf, bg_color, draw_rect, radius=14,
                               border=2,
                               border_color=C_SELECTED if is_sel else C_CARD_BORDER)
 
-            # Imagen
-            img_x = rect.x + (CARD_W - PICTO_SIZE[0]) // 2
-            img_y = rect.y + 14
-            surf.blit(image, (img_x, img_y))
+            # Imagen escalada
+            img_scaled = pygame.transform.smoothscale(
+                image, (int(PICTO_SIZE[0] * scale), int(PICTO_SIZE[1] * scale))
+            )
+            img_x = draw_rect.x + (draw_rect.width - img_scaled.get_width()) // 2
+            img_y = draw_rect.y + int(14 * scale)
+            surf.blit(img_scaled, (img_x, img_y))
 
             # Etiqueta
             label = arasaac.get_label(key)
             lbl_color = C_WHITE if is_sel else C_TEXT_DARK
             lbl_surf = self.font_label.render(label, True, lbl_color)
             surf.blit(lbl_surf, (
-                rect.x + CARD_W // 2 - lbl_surf.get_width() // 2,
-                rect.y + CARD_H - 26,
+                draw_rect.x + draw_rect.width // 2 - lbl_surf.get_width() // 2,
+                draw_rect.y + draw_rect.height - 26,
             ))
 
             # Checkmark si seleccionado
             if is_sel:
                 ck_font = pygame.font.SysFont("sans", 18, bold=True)
                 ck = ck_font.render("✓", True, C_WHITE)
-                surf.blit(ck, (rect.right - 22, rect.y + 6))
+                surf.blit(ck, (draw_rect.right - 22, draw_rect.y + 6))
 
         # Botón Saltar
         skip_color = C_SHADOW if self.hovered_btn == "skip" else C_CARD_BORDER
@@ -335,18 +366,31 @@ class GameScreen(Screen):
 
 class ResultScreen(Screen):
     def __init__(self, engine: InferenceEngine, on_restart):
-        self.engine = engine
-        self.on_restart = on_restart
-        self.message = engine.get_message()
-        self.top_n   = engine.get_top_n(3)
-        self.btn_restart = pygame.Rect(SCREEN_W // 2 - 120, SCREEN_H - 90, 240, 52)
-        self.hovered = False
+        self.engine      = engine
+        self.on_restart  = on_restart
+        self.message     = engine.get_message()
+        self.top_n       = engine.get_top_n(3)
+        self.btn_restart = pygame.Rect(SCREEN_W // 2 - 140, SCREEN_H - 100, 280, 58)
+        self.hovered     = False
+        self.flash_alpha = 180
+
+        # Cargar pictograma ganador en tamaño grande
+        top_key, _ = self.top_n[0]
+        self.top_key   = top_key
+        self.top_label = arasaac.get_label(top_key)
+        self.top_image = arasaac.get_image(top_key, (200, 200))
+
+        tts.speak(tts.PHRASES["result"] + " " + self.message)
 
     def handle_event(self, event):
         if event.type == pygame.MOUSEMOTION:
             self.hovered = self.btn_restart.collidepoint(event.pos)
         if event.type == pygame.MOUSEBUTTONDOWN and self.hovered:
             self.on_restart()
+
+    def update(self):
+        if self.flash_alpha > 0:
+            self.flash_alpha = max(0, self.flash_alpha - 6)
 
     def draw(self, surf):
         surf.fill(C_BG)
@@ -355,60 +399,42 @@ class ResultScreen(Screen):
         header = pygame.Rect(0, 0, SCREEN_W, 80)
         draw_rounded_rect(surf, C_HEADER_BG, header, radius=0)
         hdr_font = pygame.font.SysFont("sans", 22, bold=True)
-        hdr = hdr_font.render("Resultado para el terapeuta", True, C_WHITE)
+        hdr = hdr_font.render("¿Qué necesita?", True, C_WHITE)
         surf.blit(hdr, (SCREEN_W // 2 - hdr.get_width() // 2, 26))
 
-        # Caja de mensaje principal
-        msg_rect = pygame.Rect(60, 110, SCREEN_W - 120, 180)
+        # Pictograma principal — grande y centrado
+        img_x = SCREEN_W // 2 - 100
+        img_y = 110
+        surf.blit(self.top_image, (img_x, img_y))
+
+        # Etiqueta del pictograma
+        lbl_font = pygame.font.SysFont("sans", 22, bold=True)
+        lbl_surf = lbl_font.render(self.top_label, True, C_TEXT_DARK)
+        surf.blit(lbl_surf, (SCREEN_W // 2 - lbl_surf.get_width() // 2, 322))
+
+        # Mensaje principal — grande, claro, accionable
+        msg_rect = pygame.Rect(60, 360, SCREEN_W - 120, 130)
         draw_rounded_rect(surf, C_RESULT_BG, msg_rect, radius=16,
                           border=2, border_color=C_RESULT_BORDER)
-        msg_font = pygame.font.SysFont("sans", 18)
+        msg_font = pygame.font.SysFont("sans", 22, bold=True)
         draw_text_wrapped(surf, self.message, msg_font, C_TEXT_DARK,
-                          msg_rect.inflate(-24, -24).move(12, 12))
+                          msg_rect.inflate(-32, -20).move(16, 10))
 
-        # Top predicciones
-        top_font = pygame.font.SysFont("sans", 16, bold=True)
-        sub_font = pygame.font.SysFont("sans", 15)
-        lbl = top_font.render("Distribución de intenciones:", True, C_TEXT_DARK)
-        surf.blit(lbl, (60, 310))
+        # Flash de entrada
+        if self.flash_alpha > 0:
+            flash_surf = pygame.Surface((SCREEN_W, SCREEN_H), pygame.SRCALPHA)
+            flash_surf.fill((255, 255, 255, self.flash_alpha))
+            surf.blit(flash_surf, (0, 0))
 
-        y = 340
-        for key, prob in self.top_n:
-            bar_total = SCREEN_W - 180
-            bar_fill  = int(bar_total * prob)
-            bar_bg    = pygame.Rect(160, y + 4, bar_total, 18)
-            bar_fg    = pygame.Rect(160, y + 4, bar_fill, 18)
-            pygame.draw.rect(surf, C_CARD_BORDER, bar_bg, border_radius=6)
-            pygame.draw.rect(surf, C_ACCENT, bar_fg, border_radius=6)
-
-            name_surf = sub_font.render(
-                f"{arasaac.get_label(key)}", True, C_TEXT_DARK
-            )
-            surf.blit(name_surf, (60, y))
-            pct_surf = sub_font.render(f"{int(prob * 100)}%", True, C_TEXT_DARK)
-            surf.blit(pct_surf, (SCREEN_W - 60, y))
-            y += 36
-
-        # Pictogramas del top 3
-        y2 = 460
-        img_font = pygame.font.SysFont("sans", 12)
-        for i, (key, _) in enumerate(self.top_n):
-            img = arasaac.get_image(key, (70, 70))
-            x = 60 + i * 100
-            surf.blit(img, (x, y2))
-            lbl2 = img_font.render(arasaac.get_label(key), True, C_TEXT_DARK)
-            surf.blit(lbl2, (x + 35 - lbl2.get_width() // 2, y2 + 74))
-
-        # Botón reiniciar
+        # Botón Nueva sesión
         btn_color = C_BTN_HOVER if self.hovered else C_BTN_PRIMARY
         draw_rounded_rect(surf, btn_color, self.btn_restart, radius=14)
-        btn_font = pygame.font.SysFont("sans", 19, bold=True)
+        btn_font = pygame.font.SysFont("sans", 20, bold=True)
         btn_lbl  = btn_font.render("Nueva sesión", True, C_BTN_TEXT)
         surf.blit(btn_lbl, (
             self.btn_restart.centerx - btn_lbl.get_width() // 2,
             self.btn_restart.centery - btn_lbl.get_height() // 2,
         ))
-
 
 # ---------------------------------------------------------------------------
 # App principal
