@@ -355,7 +355,7 @@ class ResultScreen(Screen):
         header = pygame.Rect(0, 0, SCREEN_W, 80)
         draw_rounded_rect(surf, C_HEADER_BG, header, radius=0)
         hdr_font = pygame.font.SysFont("sans", 22, bold=True)
-        hdr = hdr_font.render("Resultado para el terapeuta", True, C_WHITE)
+        hdr = hdr_font.render("¿Qué necesita?", True, C_WHITE)
         surf.blit(hdr, (SCREEN_W // 2 - hdr.get_width() // 2, 26))
 
         # Caja de mensaje principal
@@ -366,38 +366,16 @@ class ResultScreen(Screen):
         draw_text_wrapped(surf, self.message, msg_font, C_TEXT_DARK,
                           msg_rect.inflate(-24, -24).move(12, 12))
 
-        # Top predicciones
-        top_font = pygame.font.SysFont("sans", 16, bold=True)
-        sub_font = pygame.font.SysFont("sans", 15)
-        lbl = top_font.render("Distribución de intenciones:", True, C_TEXT_DARK)
-        surf.blit(lbl, (60, 310))
+        # Pictograma principal centrado
+        top_key, _ = self.top_n[0]
+        img_big = arasaac.get_image(top_key, (160, 160))
+        img_x = SCREEN_W // 2 - 80
+        surf.blit(img_big, (img_x, 310))
 
-        y = 340
-        for key, prob in self.top_n:
-            bar_total = SCREEN_W - 180
-            bar_fill  = int(bar_total * prob)
-            bar_bg    = pygame.Rect(160, y + 4, bar_total, 18)
-            bar_fg    = pygame.Rect(160, y + 4, bar_fill, 18)
-            pygame.draw.rect(surf, C_CARD_BORDER, bar_bg, border_radius=6)
-            pygame.draw.rect(surf, C_ACCENT, bar_fg, border_radius=6)
-
-            name_surf = sub_font.render(
-                f"{arasaac.get_label(key)}", True, C_TEXT_DARK
-            )
-            surf.blit(name_surf, (60, y))
-            pct_surf = sub_font.render(f"{int(prob * 100)}%", True, C_TEXT_DARK)
-            surf.blit(pct_surf, (SCREEN_W - 60, y))
-            y += 36
-
-        # Pictogramas del top 3
-        y2 = 460
-        img_font = pygame.font.SysFont("sans", 12)
-        for i, (key, _) in enumerate(self.top_n):
-            img = arasaac.get_image(key, (70, 70))
-            x = 60 + i * 100
-            surf.blit(img, (x, y2))
-            lbl2 = img_font.render(arasaac.get_label(key), True, C_TEXT_DARK)
-            surf.blit(lbl2, (x + 35 - lbl2.get_width() // 2, y2 + 74))
+        # Etiqueta bajo el pictograma
+        lbl_font = pygame.font.SysFont("sans", 18, bold=True)
+        lbl_surf = lbl_font.render(arasaac.get_label(top_key), True, C_TEXT_DARK)
+        surf.blit(lbl_surf, (SCREEN_W // 2 - lbl_surf.get_width() // 2, 480))
 
         # Botón reiniciar
         btn_color = C_BTN_HOVER if self.hovered else C_BTN_PRIMARY
