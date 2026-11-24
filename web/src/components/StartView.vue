@@ -13,7 +13,7 @@ const LOGO_COLORS = ['--c-emociones-edge', '--c-actividades-edge', '--c-alimenta
 </script>
 
 <template>
-  <section class="start" aria-labelledby="start-title">
+  <section class="view start" aria-labelledby="start-title">
     <div class="start__top"><SoundToggle /></div>
 
     <h1 id="start-title" class="logo" aria-label="Pictomente">
@@ -44,42 +44,46 @@ const LOGO_COLORS = ['--c-emociones-edge', '--c-actividades-edge', '--c-alimenta
 </template>
 
 <style scoped>
-.start { display: grid; grid-template-columns: minmax(0, 1fr); justify-items: center; gap: 1.4rem; padding-block: 1rem 3rem; }
-.start__top { justify-self: end; }
+.start { align-items: center; position: relative; }
+.start__top { align-self: flex-end; flex: none; }
 
-.logo { display: flex; font-size: var(--text-logo); letter-spacing: -0.02em; line-height: 1; margin-top: -2rem; }
+.logo {
+  display: flex; flex: none; margin: 0;
+  font-size: clamp(2.4rem, min(12vw, 11dvh), 6.4rem); letter-spacing: -0.02em; line-height: 1;
+}
 .logo__letter {
   display: inline-block; color: var(--c);
   -webkit-text-stroke: 0.09em var(--ink); paint-order: stroke fill;
   text-shadow: 0 0.06em 0 var(--ink);
 }
 
-.start__guide { max-width: 44rem; }
+.start__guide { flex: none; max-width: 44rem; }
 
 .start__tiles {
-  list-style: none; margin: 0.4rem 0 0; padding: 0;
-  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; width: min(100%, 40rem);
+  flex: 1 1 0; min-height: 0; width: min(100%, 40rem);
+  list-style: none; margin: 0; padding: 0.4rem 0.3rem;
+  display: grid; gap: clamp(0.5rem, 1.6vmin, 1rem);
+  grid-template-columns: repeat(3, minmax(0, 1fr)); grid-template-rows: repeat(2, minmax(0, 1fr));
 }
-.start__tiles :deep(.picto__label) { font-size: var(--text-sm); }
-.start__tiles li:nth-child(3n + 2) { translate: 0 0.8rem; }
+.start__tiles li { min-height: 0; min-width: 0; }
 .start__tiles li:nth-child(odd) { rotate: -1.5deg; }
 .start__tiles li:nth-child(even) { rotate: 1.5deg; }
+.start__play { flex: none; }
 
-.start__play { margin-top: 1rem; }
-
-/* pantallas anchas: título y guía a la izquierda, fichas a la derecha */
-@media (min-width: 62rem) {
+/* apaisado (laptop, tablet, celular de lado): título y guía a la izquierda, fichas a la derecha */
+@media (min-aspect-ratio: 1/1) and (min-width: 30rem) {
   .start {
+    display: grid; gap: 0 clamp(1rem, 4vw, 3rem);
     grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
-    grid-template-areas: 'logo tiles' 'guide tiles' 'play tiles';
-    align-content: center; align-items: center; column-gap: 3rem; row-gap: 1.6rem;
-    min-height: calc(100dvh - 3rem); position: relative;
+    grid-template-rows: 1fr auto auto auto 1fr;
+    grid-template-areas: '. tiles' 'logo tiles' 'guide tiles' 'play tiles' '. tiles';
+    align-items: center; justify-items: start;
   }
-  .start__top { position: absolute; top: 0; right: 0; }
-  .logo { grid-area: logo; font-size: clamp(4rem, 6.4vw, 6.4rem); margin: 0; justify-self: start; }
+  .start__top { position: absolute; top: 0; right: 0; z-index: 2; }
+  .logo { grid-area: logo; font-size: clamp(2.6rem, min(6.4vw, 14dvh), 6.4rem); margin-bottom: clamp(0.4rem, 2dvh, 1.4rem); }
   .start__guide { grid-area: guide; max-width: none; }
-  .start__tiles { grid-area: tiles; width: 100%; margin: 0; }
-  .start__play { grid-area: play; justify-self: start; margin: 0; }
+  .start__tiles { grid-area: tiles; width: 100%; height: 100%; max-height: 40rem; align-self: center; }
+  .start__play { grid-area: play; margin-top: clamp(0.5rem, 2.5dvh, 1.6rem); }
 }
 
 @media (prefers-reduced-motion: no-preference) {
@@ -94,8 +98,6 @@ const LOGO_COLORS = ['--c-emociones-edge', '--c-actividades-edge', '--c-alimenta
   @keyframes beat { 50% { transform: scale(1.06); } }
 }
 @media (max-width: 36rem) {
-  .start__tiles { gap: 0.7rem; }
   .start__tiles :deep(.picto__label) { display: none; }
-  .logo { margin-top: -1rem; }
 }
 </style>

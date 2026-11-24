@@ -4,7 +4,11 @@ import App from '../src/App.vue'
 import { useSpeech } from '../src/composables/useSpeech'
 import { MAX_REJECTIONS, MAX_ROUNDS } from '../src/lib/engine'
 import { ROOT_CATEGORIES } from '../src/data/graph'
-import { synth } from './setup'
+import manifest from '../src/data/voice-manifest.json'
+import { roundPrompt } from '../src/data/phrases'
+import { audio, synth } from './setup'
+
+const clip = (text: string) => `${import.meta.env.BASE_URL}audio/${(manifest as Record<string, string>)[text]}`
 
 type W = VueWrapper
 
@@ -33,6 +37,7 @@ const startedApp = async () => {
 afterEach(() => {
   if (useSpeech().muted.value) useSpeech().toggleMute()
   synth.speak.mockClear()
+  audio.reset()
 })
 
 describe('welcome screen', () => {
@@ -50,18 +55,17 @@ describe('playing', () => {
     const w = await startedApp()
     expect(cards(w)).toHaveLength(ROOT_CATEGORIES.length)
     expect(w.find('.stars').attributes('aria-label')).toBe(`Ronda 1 de ${MAX_ROUNDS}`)
-    expect(synth.speak).toHaveBeenCalled()
-    expect((synth.speak.mock.calls.at(-1)![0] as { text: string }).text).toContain('hoy')
+    expect(audio.played.at(-1)!.src).toBe(clip(roundPrompt(0)))
   })
 
   it('selects a card, says its reaction and counts it on the ready button', async () => {
     const w = await startedApp()
-    synth.speak.mockClear()
+    audio.reset()
     await cards(w)[0]!.trigger('click')
     expect(cards(w)[0]!.attributes('aria-pressed')).toBe('true')
     expect(w.find('.game__count').text()).toBe('1')
     expect(w.find('.guide__text').text()).toContain('comida')
-    expect(synth.speak).toHaveBeenCalledTimes(1)
+    expect(audio.played).toHaveLength(1)
 
     await cards(w)[0]!.trigger('click')
     expect(cards(w)[0]!.attributes('aria-pressed')).toBe('false')
@@ -90,8 +94,9 @@ describe('playing', () => {
   it('stays quiet when the child turns the sound off', async () => {
     const w = mount(App)
     await w.find('.sound').trigger('click')
-    synth.speak.mockClear()
+    audio.reset()
     await click(w, '¡Jugar!')
+    expect(audio.played).toHaveLength(0)
     expect(synth.speak).not.toHaveBeenCalled()
   })
 })

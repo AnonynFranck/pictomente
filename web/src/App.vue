@@ -60,8 +60,13 @@ function goHome() {
 </template>
 
 <style scoped>
-.shell { position: relative; z-index: 1; width: min(100% - 2rem, 62rem); margin-inline: auto; padding-block: 1.2rem; min-height: 100dvh; }
-.shell--wide { width: min(100% - 2rem, 76rem); }
+.shell {
+  position: relative; z-index: 1; height: 100dvh; overflow: hidden;
+  display: flex; flex-direction: column;
+  width: min(100% - clamp(1rem, 4vw, 3rem), 62rem); margin-inline: auto;
+  padding-block: clamp(0.5rem, 1.8dvh, 1.2rem);
+}
+.shell--wide { width: min(100% - clamp(1rem, 4vw, 3rem), 76rem); }
 .skip-link:focus { position: fixed; top: 0.5rem; left: 0.5rem; width: auto; height: auto; clip: auto; padding: 0.8rem 1.2rem; background: var(--ink); color: var(--white); z-index: 10; border-radius: 12px; }
 
 .view-enter-active, .view-leave-active { transition: opacity var(--duration-normal) var(--ease-out-expo), transform var(--duration-normal) var(--ease-out-expo); }

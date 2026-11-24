@@ -2,9 +2,11 @@
 
 html { -webkit-text-size-adjust: 100%; }
 
+html, body { height: 100%; overflow: hidden; }
+
 body {
   margin: 0;
-  min-height: 100dvh;
+  height: 100dvh;
   font-family: var(--font-display);
   font-size: var(--text-md);
   font-weight: 500;
@@ -38,4 +40,10 @@ button { font: inherit; color: inherit; touch-action: manipulation; }
     animation-delay: 0ms !important;
     transition-duration: 0.01ms !important;
   }
+}
+
+/* cada pantalla ocupa exactamente la altura disponible: nunca hay scroll */
+.view {
+  flex: 1 1 0; min-height: 0;
+  display: flex; flex-direction: column; gap: clamp(0.4rem, 1.6dvh, 1.2rem);
 }

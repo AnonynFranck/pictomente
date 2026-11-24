@@ -1,11 +1,17 @@
 import { computed, readonly, ref } from 'vue'
+import manifest from '../data/voice-manifest.json'
 
 /**
- * Voz del guía con la Web Speech API del navegador (sin servidor ni claves).
- * Si el navegador no tiene voz en español o el niño la apaga, simplemente calla.
+ * Voz de Pico. Cada frase del juego tiene un audio pregrabado con voz neuronal
+ * (web/public/audio), así suena igual y natural en cualquier navegador. Si una frase
+ * no está grabada, o el navegador bloquea el audio, usa la voz del propio navegador.
  */
+const clips = manifest as Readonly<Record<string, string>>
 const muted = ref(false)
-const supported = typeof window !== 'undefined' && 'speechSynthesis' in window
+
+const hasSynth = typeof window !== 'undefined' && 'speechSynthesis' in window
+const hasAudio = typeof Audio !== 'undefined'
+let current: HTMLAudioElement | null = null
 
 function spanishVoice(): SpeechSynthesisVoice | undefined {
   const voices = window.speechSynthesis.getVoices()
@@ -13,9 +19,8 @@ function spanishVoice(): SpeechSynthesisVoice | undefined {
     ?? voices.find((v) => v.lang.toLowerCase().startsWith('es'))
 }
 
-function speak(text: string): void {
-  if (!supported || muted.value || !text) return
-  window.speechSynthesis.cancel()
+function speakWithBrowserVoice(text: string): void {
+  if (!hasSynth) return
   const utterance = new SpeechSynthesisUtterance(text)
   utterance.lang = 'es-MX'
   utterance.rate = 0.92
@@ -25,9 +30,32 @@ function speak(text: string): void {
   window.speechSynthesis.speak(utterance)
 }
 
+function stop(): void {
+  current?.pause()
+  current = null
+  if (hasSynth) window.speechSynthesis.cancel()
+}
+
+function speak(text: string): void {
+  if (muted.value || !text) return
+  stop()
+  const file = clips[text]
+  if (!file || !hasAudio) {
+    speakWithBrowserVoice(text)
+    return
+  }
+  const audio = new Audio(`${import.meta.env.BASE_URL}audio/${file}`)
+  current = audio
+  audio.play().catch(() => {
+    if (current !== audio) return
+    current = null
+    speakWithBrowserVoice(text)
+  })
+}
+
 function toggleMute(): void {
   muted.value = !muted.value
-  if (muted.value && supported) window.speechSynthesis.cancel()
+  if (muted.value) stop()
 }
 
 export function useSpeech() {
@@ -35,6 +63,6 @@ export function useSpeech() {
     speak,
     toggleMute,
     muted: readonly(muted),
-    isSupported: computed(() => supported),
+    isSupported: computed(() => hasAudio || hasSynth),
   }
 }

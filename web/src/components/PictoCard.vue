@@ -53,7 +53,8 @@ const category = computed(() => categoryOf(props.pictoKey) ?? 'none')
 <style scoped>
 .picto {
   --fill: var(--c-none); --edge-color: var(--c-none-edge);
-  position: relative; display: flex; flex-direction: column; align-items: center; gap: 0.5rem; min-width: 0;
+  position: relative; display: flex; flex-direction: column; align-items: center; gap: clamp(0.2rem, 0.8dvh, 0.5rem); min-width: 0; min-height: 0;
+  width: 100%; height: 100%;
   padding: 0.6rem 0.6rem 0.8rem;
   background: var(--fill);
   border: 5px solid var(--ink); border-bottom-width: calc(5px + 8px);
@@ -76,14 +77,14 @@ button.picto:hover { transform: translateY(-4px) rotate(-1deg); filter: brightne
 button.picto:active { transform: translateY(8px); border-bottom-width: 5px; }
 
 .picto__art {
-  display: grid; place-items: center; width: 100%; aspect-ratio: 1;
+  display: grid; place-items: center; width: 100%; flex: 1 1 0; min-height: 0;
   background: var(--white); border: 4px solid var(--ink); border-radius: calc(var(--radius) - 8px);
   overflow: hidden;
 }
-.picto__art img { width: 90%; height: 90%; object-fit: contain; }
-.picto__fallback { font-weight: 700; font-size: 4.5rem; color: var(--ink-soft); }
+.picto__art img { width: 90%; height: 90%; object-fit: contain; min-height: 0; }
+.picto__fallback { font-weight: 700; font-size: clamp(2rem, 8vmin, 4.5rem); color: var(--ink-soft); }
 .picto__label {
-  max-width: 100%; overflow-wrap: anywhere; font-weight: 700; font-size: var(--text-md); line-height: 1.1;
+  flex: none; max-width: 100%; overflow-wrap: anywhere; font-weight: 700; font-size: clamp(0.85rem, 0.5rem + 1.9vmin, 1.5rem); line-height: 1.1;
   text-shadow: 0 2px 0 oklch(100% 0 0 / 0.5);
 }
 
@@ -99,11 +100,16 @@ button.picto:active { transform: translateY(8px); border-bottom-width: 5px; }
 
 @media (max-width: 36rem) {
   .picto { padding: 0.4rem 0.4rem 0.6rem; }
-  .picto__label { font-size: 1.05rem; }
+}
+/* pantallas bajas: menos marco, más dibujo */
+@media (max-height: 700px) {
+  .picto { padding: 0.25rem 0.25rem 0.35rem; border-width: 4px; border-bottom-width: 9px; gap: 0.1rem; }
+  .picto__art { border-width: 3px; }
+  .picto__badge { width: 2.4rem; height: 2.4rem; border-width: 4px; top: -10px; right: -8px; }
 }
 
 .picto--lg { padding: 0.9rem 0.9rem 1.1rem; }
-.picto--lg .picto__label { font-size: var(--text-lg); }
+.picto--lg .picto__label { font-size: clamp(1.1rem, 0.6rem + 3vmin, 2.3rem); }
 
 @media (prefers-reduced-motion: no-preference) {
   .picto--selected { animation: pop 460ms var(--ease-bounce); }

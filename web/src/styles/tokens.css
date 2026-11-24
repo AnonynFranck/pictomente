@@ -45,6 +45,10 @@
   --text-xl: clamp(2rem, 1.4rem + 2.6vw, 3.6rem);
   --text-logo: clamp(3.2rem, 1.4rem + 8vw, 7rem);
 
+  /* Alturas adaptables al dispositivo */
+  --ctl: clamp(2.8rem, 7dvh, 4rem);      /* botones redondos (sonido, inicio) */
+  --btn-h: clamp(3rem, 9dvh, 4.5rem);    /* botones grandes */
+
   /* Forma */
   --radius: 28px;
   --radius-sm: 20px;
@@ -55,4 +59,12 @@
   --ease-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
   --duration-fast: 140ms;
   --duration-normal: 340ms;
+}
+
+/* pantallas bajas (celulares apaisados, laptops chicas): todo un poco más compacto */
+@media (max-height: 640px) {
+  :root {
+    --text-sm: 0.95rem; --text-md: 1.05rem; --text-lg: 1.3rem; --text-xl: 1.7rem;
+    --radius: 20px; --radius-sm: 15px; --edge: 6px;
+  }
 }

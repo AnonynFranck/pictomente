@@ -10,15 +10,16 @@ import PictoCard from '../src/components/PictoCard.vue'
 import SoundToggle from '../src/components/SoundToggle.vue'
 import StarProgress from '../src/components/StarProgress.vue'
 import { categoryOf, getCheer, getLabel } from '../src/data/graph'
-import { guessQuestion, pickReaction, roundPrompt } from '../src/data/phrases'
+import { PHRASES, guessQuestion, pickReaction, roundPrompt } from '../src/data/phrases'
 import { pictogramUrl } from '../src/data/pictograms'
 import { LEAF_NODES, ROOT_CATEGORIES } from '../src/data/graph'
 import { useSpeech } from '../src/composables/useSpeech'
-import { synth } from './setup'
+import { audio, synth } from './setup'
 
 afterEach(() => {
   if (useSpeech().muted.value) useSpeech().toggleMute()
   synth.speak.mockClear()
+  audio.reset()
 })
 
 describe('PictoCard', () => {
@@ -121,10 +122,10 @@ describe('PicoMascot', () => {
 
 describe('MascotGuide', () => {
   it('shows what Pico says and lets the child hear it again', async () => {
-    const w = mount(MascotGuide, { props: { text: '¡Hola!' } })
-    expect(w.text()).toContain('¡Hola!')
+    const w = mount(MascotGuide, { props: { text: PHRASES.start } })
+    expect(w.text()).toContain('Soy Pico')
     await w.find('.guide__listen').trigger('click')
-    expect(synth.speak).toHaveBeenCalledTimes(1)
+    expect(audio.played).toHaveLength(1)
   })
 
   it('hides the listen button while the sound is off', () => {

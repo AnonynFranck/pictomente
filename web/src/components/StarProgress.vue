@@ -25,7 +25,7 @@ defineProps<{ current: number; total: number }>()
 
 <style scoped>
 .stars { display: flex; gap: 0.1rem; }
-.stars__star { width: clamp(30px, 9.5vw, 46px); height: auto; }
+.stars__star { width: clamp(24px, min(9.5vw, 5dvh), 46px); height: auto; }
 .stars__star { stroke: var(--ink); fill: oklch(99% 0.01 95 / 0.7); }
 .stars__star--done { fill: var(--sun); }
 .stars__star--now { fill: var(--white); transform-origin: center; }

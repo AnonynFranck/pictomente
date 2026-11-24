@@ -16,7 +16,7 @@ withDefaults(
 .big {
   --fill: var(--go); --edge-color: var(--go-edge);
   display: inline-flex; align-items: center; justify-content: center; gap: 0.7rem;
-  min-height: 4.5rem; padding: 0.6rem 2rem;
+  min-height: var(--btn-h); padding: 0.4rem 2rem;
   font-family: var(--font-display); font-weight: 700; font-size: var(--text-lg);
   color: var(--ink); letter-spacing: 0.01em;
   background: linear-gradient(180deg, color-mix(in oklch, var(--fill), white 28%) 0%, var(--fill) 55%);
@@ -30,7 +30,7 @@ withDefaults(
 }
 .big--sun { --fill: var(--sun); --edge-color: var(--sun-edge); }
 .big--stop { --fill: var(--stop); --edge-color: var(--stop-edge); }
-.big--lg { min-height: 6rem; padding-inline: 3rem; font-size: var(--text-xl); }
+.big--lg { min-height: clamp(3.4rem, 11dvh, 6rem); padding-inline: 3rem; font-size: var(--text-xl); }
 
 @media (max-width: 36rem) {
   .big { padding-inline: 1rem; gap: 0.4rem; }

@@ -8,7 +8,7 @@ export const PHRASES = {
   unresolved: '¡Gracias por jugar! Un adulto te va a ayudar.',
 } as const
 
-const ROUND_PROMPTS = [
+export const ROUND_PROMPTS = [
   '¿De qué quieres hablar hoy? ¡Toca un dibujo!',
   'Toca los dibujos que se parezcan a lo que quieres.',
   '¡Casi lo tengo! Toca otra vez lo que se parezca.',

@@ -25,16 +25,13 @@ const { muted, toggleMute, isSupported } = useSpeech()
 
 <style scoped>
 .sound {
-  display: grid; place-items: center; width: 4rem; height: 4rem;
+  display: grid; place-items: center; width: var(--ctl); height: var(--ctl);
   background: var(--white); color: var(--ink);
   border: 5px solid var(--ink); border-radius: 50%;
   box-shadow: 0 5px 0 oklch(26% 0.06 270 / 0.3);
   cursor: pointer; transition: transform var(--duration-fast) var(--ease-bounce);
 }
 .sound[aria-pressed='false'] { background: var(--stop); }
-@media (max-width: 36rem) {
-  .sound { width: 3.4rem; height: 3.4rem; }
-}
 .sound:hover { transform: scale(1.08) rotate(-4deg); }
 .sound:active { transform: translateY(4px); box-shadow: none; }
 </style>

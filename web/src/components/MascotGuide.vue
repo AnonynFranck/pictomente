@@ -36,11 +36,11 @@ const { speak, isSupported, muted } = useSpeech()
 <style scoped>
 .guide { display: flex; align-items: center; gap: 0.5rem; width: 100%; }
 /* la mascota nunca ocupa más de una cuarta parte del ancho en fila */
-.guide__pico { width: min(var(--pico), 26vw); height: auto; }
+.guide__pico { width: min(var(--pico), 26vw, 17dvh); height: auto; }
 
 .guide__bubble {
   position: relative; flex: 1; min-width: 0; display: flex; align-items: center; gap: 0.8rem;
-  padding: 1rem 1.2rem; min-height: 4.5rem;
+  padding: clamp(0.4rem, 1.4dvh, 1rem) 1.2rem; min-height: clamp(3rem, 8dvh, 4.5rem);
   background: var(--white); border: 5px solid var(--ink); border-radius: var(--radius);
   box-shadow: 0 6px 0 oklch(26% 0.06 270 / 0.25);
 }
@@ -53,7 +53,7 @@ const { speak, isSupported, muted } = useSpeech()
 
 .guide__text { flex: 1; font-size: var(--text-md); font-weight: 600; text-wrap: balance; }
 .guide__listen {
-  flex: none; display: grid; place-items: center; width: 3.2rem; height: 3.2rem;
+  flex: none; display: grid; place-items: center; width: clamp(2.4rem, 6dvh, 3.2rem); height: clamp(2.4rem, 6dvh, 3.2rem);
   background: var(--sun); color: var(--ink); border: 4px solid var(--ink); border-radius: 50%;
   box-shadow: 0 4px 0 var(--sun-edge); cursor: pointer;
   transition: transform var(--duration-fast) var(--ease-bounce);
@@ -62,7 +62,7 @@ const { speak, isSupported, muted } = useSpeech()
 .guide__listen:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--sun-edge); }
 
 /* apilado: Pico arriba, globo debajo con la cola hacia arriba */
-@media (max-width: 40rem) {
+@media (max-width: 40rem) and (max-aspect-ratio: 1/1) {
   .guide--stack { flex-direction: column; gap: 1rem; }
   .guide--stack .guide__pico { width: var(--pico); max-width: 60vw; }
   .guide--stack .guide__bubble::before, .guide--stack .guide__bubble::after {
