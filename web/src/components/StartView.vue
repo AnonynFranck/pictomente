@@ -23,7 +23,7 @@ const LOGO_COLORS = ['--c-emociones-edge', '--c-actividades-edge', '--c-alimenta
         class="logo__letter"
         :style="{ '--c': `var(${LOGO_COLORS[i % LOGO_COLORS.length]})`, '--i': i }"
         aria-hidden="true"
-      >{{ letter }}</span>
+      ><span class="logo__wave">{{ letter }}</span></span>
     </h1>
 
     <MascotGuide :text="PHRASES.start" mood="happy" :size="170" stack class="start__guide" />
@@ -88,12 +88,14 @@ const LOGO_COLORS = ['--c-emociones-edge', '--c-actividades-edge', '--c-alimenta
 
 @media (prefers-reduced-motion: no-preference) {
   .logo__letter { animation: letter-in 700ms var(--ease-bounce) backwards; animation-delay: calc(var(--i) * 70ms); }
-  .logo__letter:hover { animation: letter-jump 500ms var(--ease-bounce); }
+  /* ola al pasar el cursor: la entrada y la ola viven en elementos distintos para no reiniciarse */
+  .logo__wave { display: inline-block; }
+  .logo:hover .logo__wave { animation: letter-wave 700ms ease-in-out calc(var(--i, 0) * 55ms); }
   .start__tiles li { animation: tile-in 600ms var(--ease-bounce) backwards; animation-delay: calc(var(--i) * 80ms + 400ms); }
   .start__play { animation: beat 1.6s ease-in-out 1.2s infinite; }
 
   @keyframes letter-in { from { opacity: 0; transform: translateY(-1.2em) rotate(-20deg); } }
-  @keyframes letter-jump { 40% { transform: translateY(-0.25em) rotate(-6deg); } }
+  @keyframes letter-wave { 40% { transform: translateY(-0.14em) rotate(-3deg); } 70% { transform: translateY(0.03em); } }
   @keyframes tile-in { from { opacity: 0; transform: scale(0.5); } }
   @keyframes beat { 50% { transform: scale(1.06); } }
 }
