@@ -23,15 +23,4 @@ pnpm build          # genera web/dist (typecheck + build)
 ```
 
 Requiere Node 22+ y [pnpm](https://pnpm.io).
-
-### Publicación (GitHub Pages)
-
-El workflow [`deploy-web.yml`](.github/workflows/deploy-web.yml) ejecuta los tests, compila y publica
-`web/dist` en cada push a `main` que toque `web/`.
-
-Activación única: en el repositorio, **Settings → Pages → Build and deployment → Source: GitHub Actions**.
-La URL queda en `https://<usuario>.github.io/<repo>/`.
-
-## Créditos
-
-Pictogramas: ARASAAC (Gobierno de Aragón), autor Sergio Palao — licencia CC BY-NC-SA.
+ 
