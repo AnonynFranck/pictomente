@@ -7,10 +7,10 @@ const click = (w: ReturnType<typeof mount>, text: string) =>
   w.findAll('button').find((b) => b.text().startsWith(text))!.trigger('click')
 
 describe('App flow', () => {
-  it('starts on the welcome screen with ARASAAC credits', () => {
+  it('starts on the welcome screen without a page footer', () => {
     const w = mount(App)
     expect(w.find('h1').text()).toContain('mente')
-    expect(w.text()).toContain('ARASAAC')
+    expect(w.find('footer').exists()).toBe(false)
   })
 
   it('shows the four categories in round 1 after pressing Comenzar', async () => {

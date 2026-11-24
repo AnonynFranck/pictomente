@@ -39,10 +39,6 @@ const session = useSession()
       />
     </main>
 
-    <footer class="credits">
-      Pictogramas: <a href="https://arasaac.org" target="_blank" rel="noopener noreferrer">ARASAAC</a>
-      — Gobierno de Aragón (CC BY-NC-SA). Autor: Sergio Palao.
-    </footer>
   </div>
 </template>
 
@@ -53,7 +49,5 @@ const session = useSession()
 .brand__dot { width: 0.9rem; height: 0.9rem; border: 2px solid var(--line); border-radius: 50%; background: var(--cat-emociones); box-shadow: 0.55rem 0 0 -2px var(--cat-actividades); margin-right: 0.5rem; }
 .topbar__tag { font-size: var(--text-sm); color: var(--ink-soft); }
 .main { flex: 1; }
-.credits { padding-block: 1.2rem; font-size: var(--text-sm); color: var(--ink-soft); border-top: 2px solid var(--line); }
-.credits a { color: var(--action); font-weight: 700; }
 .skip-link:focus { position: fixed; top: 0.5rem; left: 0.5rem; width: auto; height: auto; clip: auto; padding: 0.6rem 1rem; background: var(--ink); color: var(--paper); z-index: 10; }
 </style>
