@@ -24,7 +24,7 @@ SEARCH_TERMS = {
     # Categorías raíz
     "alimentacion": "comida",
     "actividades":  "actividad",
-    "emociones":    "sentimientos",
+    "emociones":    "emoción",
     "entorno":      "lugar",
     # Alimentación
     "hambre":       "hambre",
