@@ -21,6 +21,3 @@ pnpm test           # tests (Vitest)
 pnpm test:coverage  # con cobertura
 pnpm build          # genera web/dist (typecheck + build)
 ```
-
-Requiere Node 22+ y [pnpm](https://pnpm.io).
- 
