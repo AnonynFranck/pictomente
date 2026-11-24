@@ -9,6 +9,7 @@ import pygame
 import pygame.freetype
 
 import arasaac
+import tts
 from inference import InferenceEngine
 
 # ---------------------------------------------------------------------------
@@ -107,6 +108,7 @@ class StartScreen(Screen):
         if event.type == pygame.MOUSEMOTION:
             self.hovered = self.btn_rect.collidepoint(event.pos)
         if event.type == pygame.MOUSEBUTTONDOWN and self.hovered:
+            tts.speak(tts.PHRASES["start"])
             self.on_start()
 
     def draw(self, surf):
@@ -178,6 +180,8 @@ class GameScreen(Screen):
         self.selected = set()
         self.current_pictos = self.engine.get_pictograms_for_round(CARDS_PER_ROW)
         self._build_cards()
+        phrase = tts.PHRASES["round_0"] if self.engine.round_num == 0 else tts.PHRASES["round_n"]
+        tts.speak(phrase)
 
     def _build_cards(self):
         self.cards = []
@@ -211,14 +215,17 @@ class GameScreen(Screen):
                         self.selected.discard(key)
                     else:
                         self.selected.add(key)
+                        tts.speak(arasaac.get_label(key))
                     return
 
             # Confirmar selección
             if self.btn_confirm.collidepoint(pos):
+                tts.speak(tts.PHRASES["confirm"])
                 self._process_selection()
 
             # Saltar ronda
             if self.btn_skip.collidepoint(pos):
+                tts.speak(tts.PHRASES["skip"])
                 self._next_round(force=True)
 
     def _process_selection(self):
@@ -341,6 +348,7 @@ class ResultScreen(Screen):
         self.top_n   = engine.get_top_n(3)
         self.btn_restart = pygame.Rect(SCREEN_W // 2 - 120, SCREEN_H - 90, 240, 52)
         self.hovered = False
+        tts.speak(tts.PHRASES["result"] + " " + self.message)
 
     def handle_event(self, event):
         if event.type == pygame.MOUSEMOTION:
