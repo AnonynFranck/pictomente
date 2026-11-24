@@ -366,13 +366,20 @@ class GameScreen(Screen):
 
 class ResultScreen(Screen):
     def __init__(self, engine: InferenceEngine, on_restart):
-        self.engine = engine
-        self.on_restart = on_restart
-        self.message = engine.get_message()
-        self.top_n   = engine.get_top_n(3)
-        self.btn_restart = pygame.Rect(SCREEN_W // 2 - 120, SCREEN_H - 90, 240, 52)
-        self.hovered = False
-        self.flash_alpha: int = 180  # arranca con flash blanco, se desvanece
+        self.engine      = engine
+        self.on_restart  = on_restart
+        self.message     = engine.get_message()
+        self.top_n       = engine.get_top_n(3)
+        self.btn_restart = pygame.Rect(SCREEN_W // 2 - 140, SCREEN_H - 100, 280, 58)
+        self.hovered     = False
+        self.flash_alpha = 180
+
+        # Cargar pictograma ganador en tamaño grande
+        top_key, _ = self.top_n[0]
+        self.top_key   = top_key
+        self.top_label = arasaac.get_label(top_key)
+        self.top_image = arasaac.get_image(top_key, (200, 200))
+
         tts.speak(tts.PHRASES["result"] + " " + self.message)
 
     def handle_event(self, event):
@@ -395,41 +402,39 @@ class ResultScreen(Screen):
         hdr = hdr_font.render("¿Qué necesita?", True, C_WHITE)
         surf.blit(hdr, (SCREEN_W // 2 - hdr.get_width() // 2, 26))
 
-        # Caja de mensaje principal
-        msg_rect = pygame.Rect(60, 110, SCREEN_W - 120, 180)
+        # Pictograma principal — grande y centrado
+        img_x = SCREEN_W // 2 - 100
+        img_y = 110
+        surf.blit(self.top_image, (img_x, img_y))
+
+        # Etiqueta del pictograma
+        lbl_font = pygame.font.SysFont("sans", 22, bold=True)
+        lbl_surf = lbl_font.render(self.top_label, True, C_TEXT_DARK)
+        surf.blit(lbl_surf, (SCREEN_W // 2 - lbl_surf.get_width() // 2, 322))
+
+        # Mensaje principal — grande, claro, accionable
+        msg_rect = pygame.Rect(60, 360, SCREEN_W - 120, 130)
         draw_rounded_rect(surf, C_RESULT_BG, msg_rect, radius=16,
                           border=2, border_color=C_RESULT_BORDER)
-        msg_font = pygame.font.SysFont("sans", 18)
+        msg_font = pygame.font.SysFont("sans", 22, bold=True)
         draw_text_wrapped(surf, self.message, msg_font, C_TEXT_DARK,
-                          msg_rect.inflate(-24, -24).move(12, 12))
+                          msg_rect.inflate(-32, -20).move(16, 10))
 
-        # Pictograma principal centrado
-        top_key, _ = self.top_n[0]
-        img_big = arasaac.get_image(top_key, (160, 160))
-        img_x = SCREEN_W // 2 - 80
-        surf.blit(img_big, (img_x, 310))
-
-        # Etiqueta bajo el pictograma
-        lbl_font = pygame.font.SysFont("sans", 18, bold=True)
-        lbl_surf = lbl_font.render(arasaac.get_label(top_key), True, C_TEXT_DARK)
-        surf.blit(lbl_surf, (SCREEN_W // 2 - lbl_surf.get_width() // 2, 480))
-
-        # Flash de entrada (celebración)
+        # Flash de entrada
         if self.flash_alpha > 0:
             flash_surf = pygame.Surface((SCREEN_W, SCREEN_H), pygame.SRCALPHA)
             flash_surf.fill((255, 255, 255, self.flash_alpha))
             surf.blit(flash_surf, (0, 0))
 
-        # Botón reiniciar
+        # Botón Nueva sesión
         btn_color = C_BTN_HOVER if self.hovered else C_BTN_PRIMARY
         draw_rounded_rect(surf, btn_color, self.btn_restart, radius=14)
-        btn_font = pygame.font.SysFont("sans", 19, bold=True)
+        btn_font = pygame.font.SysFont("sans", 20, bold=True)
         btn_lbl  = btn_font.render("Nueva sesión", True, C_BTN_TEXT)
         surf.blit(btn_lbl, (
             self.btn_restart.centerx - btn_lbl.get_width() // 2,
             self.btn_restart.centery - btn_lbl.get_height() // 2,
         ))
-
 
 # ---------------------------------------------------------------------------
 # App principal
